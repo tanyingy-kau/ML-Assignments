@@ -1,0 +1,14 @@
+Fixed split metrics
+LR  RMSE=12.1832 MAE=9.2922 R2=0.6340
+RF  RMSE=4.3706 MAE=3.0850 R2=0.9529
+MLP RMSE=5.5337 MAE=4.0084 R2=0.9245
+
+Paired tests on sample absolute errors (H1: LR error > RF error)
+paired_t_stat=5.348917, p_value=0.00000279
+wilcoxon_stat=621.000000, p_value=0.00000302
+
+Seed-level RMSE tests across 30 splits (H1: LR RMSE > RF RMSE)
+paired_t_stat=15.001501, p_value=0.00000000
+wilcoxon_stat=465.000000, p_value=0.00000000
+
+Summary CSV saved to: /home/mike-wang/term_project_deliverables/scripts/repeated_split_summary.csv

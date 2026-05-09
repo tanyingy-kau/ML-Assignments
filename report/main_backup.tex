@@ -1,0 +1,121 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+
+\title{Machine Learning-Based Prediction of Ethanol Concentration in Syngas Fermentation}
+\author{\IEEEauthorblockN{Ying Tan}
+\IEEEauthorblockA{CIS 732 / CIS 830, Kansas State University}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This project studies supervised regression for predicting ethanol concentration (mM) in syngas fermentation from process variables, including time, gas composition, flow rate, and composition setting. We compare a linear baseline against two nonlinear models: Random Forest Regressor and Multi-Layer Perceptron (MLP) Regressor. On the held-out test set, Linear Regression obtains RMSE 12.1832, MAE 9.2922, and $R^2=0.6340$; Random Forest achieves RMSE 4.3706, MAE 3.0850, and $R^2=0.9529$; MLP achieves RMSE 5.5337, MAE 4.0084, and $R^2=0.9245$. We further define formal statistical hypotheses and a paired testing protocol to verify whether nonlinear improvements over baseline are statistically significant. Results indicate that Random Forest provides the best accuracy-robustness tradeoff for this small tabular fermentation dataset.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Syngas fermentation, regression, random forest, MLP, statistical hypothesis testing, ethanol prediction
+\end{IEEEkeywords}
+
+\section{Introduction}
+Predicting fermentation outcomes is important for process monitoring and optimization in bio-manufacturing. In this work, the target is ethanol concentration (mM), and the core question is whether nonlinear machine learning models significantly outperform a linear baseline under limited data.
+
+This project is aligned with Canonical Track 5 (ML/Probabilistic) and the OA methodological pillar (Applied AI Systems): the goal is to apply established algorithms to a real experimental dataset and evaluate them rigorously.
+
+\section{Background and Related Work}
+Prior studies show that fermentation outputs can be predicted from process variables using machine learning when data are limited \cite{roell2022,syngasrepo}. Random Forest is known to perform strongly on tabular nonlinear data \cite{breiman2001}, while neural networks can model complex mappings but may be sensitive to optimization and convergence settings \cite{rumelhart1986}.
+
+In this project context, the SyngasMachineLearning public repository provides both data and a domain-relevant baseline context for model comparison and reproducibility \cite{syngasrepo,sklearnrfdocs}.
+
+\section{Dataset and Problem Formulation}
+\subsection{Dataset}
+The dataset is loaded from a public repository and contains 176 rows and 13 columns, with no missing values reported in preprocessing.
+
+\subsection{Inputs and Target}
+Input features: time, N2, CO, CO2, H2, flow rate (mL/min), and composition.
+
+Target: ethanol (mM).
+
+\subsection{Task}
+The task is supervised regression:
+\[
+\hat{y} = f(\mathbf{x}), \quad y \in \mathbb{R}
+\]
+where $y$ is ethanol concentration.
+
+\section{Methodology}
+\subsection{Train-Test Protocol}
+Data are split into 80\% training and 20\% testing with a fixed random seed for reproducibility.
+
+\subsection{Models}
+\begin{itemize}
+\item Linear Regression (naive baseline)
+\item Random Forest Regressor (nonlinear ensemble)
+\item MLP Regressor with hidden layers (64, 32), using feature scaling
+\end{itemize}
+
+\subsection{Evaluation Metrics}
+\[
+\mathrm{RMSE} = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(y_i-\hat{y}_i)^2}
+\]
+\[
+\mathrm{MAE} = \frac{1}{n}\sum_{i=1}^{n}|y_i-\hat{y}_i|
+\]
+\[
+R^2 = 1 - \frac{\sum_{i=1}^{n}(y_i-\hat{y}_i)^2}{\sum_{i=1}^{n}(y_i-\bar{y})^2}
+\]
+
+\section{Results}
+\begin{table}[htbp]
+\caption{Model Performance on Test Set}
+\centering
+\begin{tabular}{lccc}
+\toprule
+Model & RMSE & MAE & $R^2$ \\
+\midrule
+Linear Regression & 12.1832 & 9.2922 & 0.6340 \\
+Random Forest & 4.3706 & 3.0850 & 0.9529 \\
+MLP Regressor & 5.5337 & 4.0084 & 0.9245 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Random Forest yields the strongest overall performance, with large reductions in RMSE and MAE relative to baseline.
+
+\section{Statistical Hypothesis Testing}
+To satisfy rigorous evaluation requirements, we define:
+\[
+H_0: \mathbb{E}[e_{\mathrm{RF}} - e_{\mathrm{LR}}] = 0
+\]
+\[
+H_1: \mathbb{E}[e_{\mathrm{RF}} - e_{\mathrm{LR}}] < 0
+\]
+where $e$ denotes per-sample absolute prediction error on identical test samples.
+
+We use paired statistical testing (paired t-test or Wilcoxon signed-rank test) with significance level $\alpha=0.05$.
+
+Fixed-split paired t-test p-value: 2.79e-06\newline
+Fixed-split Wilcoxon p-value: 3.02e-06\newline
+Decision at $\alpha=0.05$: Reject $H_0$
+
+As a robustness check over 30 random splits, seed-level RMSE comparisons also reject $H_0$ with both paired t-test and Wilcoxon tests ($p<1\times10^{-8}$ in both cases).
+
+\section{Discussion}
+The data are small and tabular, which favors robust ensemble methods. Random Forest captures nonlinear interactions while maintaining stable performance. MLP also improves over baseline but shows optimization sensitivity, suggesting that more careful hyperparameter tuning or longer training may be required.
+
+Main risks include overfitting under limited sample size and distribution shift across gas-composition settings. These motivate repeated-split evaluation and explicit significance testing.
+
+\section{Conclusion}
+This project demonstrates that nonlinear models outperform a linear baseline for ethanol prediction in syngas fermentation, with Random Forest providing the best observed accuracy. The report includes formal hypothesis setup and inferential testing protocol to support claims of improvement beyond qualitative inspection.
+
+Future work includes repeated-split uncertainty analysis, stronger error diagnostics across composition regimes, and domain-informed feature engineering.
+
+\section*{GenAI Audit Appendix Placeholder}
+State what original notes, metrics, and code outputs were written by you, what AI helped rewrite, and what was not AI-assisted.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

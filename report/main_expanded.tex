@@ -1,0 +1,305 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+
+\title{Machine Learning-Based Prediction of Ethanol Concentration in Syngas Fermentation}
+\author{\IEEEauthorblockN{Ying Tan}
+\IEEEauthorblockA{CIS 732 / CIS 830, Kansas State University}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This project investigates supervised regression for predicting ethanol concentration (mM) in syngas fermentation from process variables including time, gas composition (N2, CO, CO2, H2), flow rate, and composition setting. We apply three regression models—Linear Regression (baseline), Random Forest Regressor (nonlinear ensemble), and Multi-Layer Perceptron (MLP)—to a small tabular dataset of 176 experimental measurements. On a held-out 20\% test set (35 samples), Linear Regression achieves RMSE 12.1832 mM, MAE 9.2922 mM, and $R^2=0.6340$; Random Forest achieves RMSE 4.3706 mM, MAE 3.0850 mM, and $R^2=0.9529$; MLP achieves RMSE 5.5337 mM, MAE 4.0084 mM, and $R^2=0.9245$. We define formal statistical hypotheses and apply paired t-test and Wilcoxon signed-rank tests to verify that nonlinear improvements are statistically significant. Both tests yield $p<3\times10^{-6}$, providing strong evidence that Random Forest significantly outperforms the baseline. We further validate stability via 30-fold repeated random splits. Results indicate that Random Forest provides the best accuracy-robustness tradeoff for this small tabular fermentation dataset, suitable for deployment in real-time process monitoring.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Syngas fermentation, ethanol prediction, regression, ensemble learning, random forest, statistical hypothesis testing, small tabular data
+\end{IEEEkeywords}
+
+\section{Introduction}
+Predicting fermentation outcomes is critical for real-time process monitoring and optimization in biomanufacturing. Syngas fermentation converts syngas (mixture of CO, CO2, H2, N2) into value-added chemicals, particularly ethanol. The ability to predict ethanol concentration from measured process variables enables dynamic control and efficiency improvements. However, fermentation is inherently nonlinear, and data availability is often limited in laboratory settings, motivating careful selection and evaluation of machine learning models.
+
+This work addresses the question: \textit{Can nonlinear machine learning models significantly outperform a linear baseline for ethanol concentration prediction in syngas fermentation, and what is the optimal model for small tabular experimental data?}
+
+The project aligns with Canonical Track 5 (ML/Probabilistic Methods) and applies the \textbf{Applied AI Systems} methodological pillar: we integrate established regression algorithms (Linear Regression, Random Forest, MLP) with rigorous statistical evaluation to enable evidence-based decision-making for model deployment.
+
+\section{Background and Related Work}
+
+\subsection{Syngas Fermentation and Ethanol Production}
+Syngas fermentation leverages anaerobic microorganisms (e.g., \textit{Clostridium} species) to convert syngas into organic compounds. Ethanol is a primary product and a valuable fuel precursor. Process monitoring traditionally relies on offline chromatography, introducing latency. Machine learning-based soft sensors can provide real-time predictions, enabling feedback control loops \cite{roell2022}.
+
+\subsection{Machine Learning for Fermentation}
+Prior studies demonstrate that fermentation outputs (yield, titer, rate) can be predicted from process variables using data-driven methods when experimental data are limited \cite{roell2022}. Supervised regression is the standard approach, with performance depending on model choice and data quality.
+
+Random Forests are known to excel on small tabular nonlinear datasets due to their ensemble structure and natural handling of feature interactions \cite{breiman2001}. They avoid feature scaling and provide implicit feature importance rankings. Neural networks (MLPs) can model arbitrarily complex functions but require careful hyperparameter tuning and convergence management, particularly with small samples and risk of overfitting \cite{rumelhart1986}.
+
+Linear models serve as interpretable baselines but may underfit nonlinear fermentation dynamics. The trade-off between model complexity and data scarcity motivates our comparative analysis.
+
+\subsection{Rigorous Model Evaluation}
+Standard practice in applied machine learning emphasizes:
+\begin{itemize}
+\item Formal hypothesis testing rather than qualitative comparisons \cite{breiman2001}
+\item Cross-validation or repeated-split validation to assess stability under data variability
+\item Statistical significance testing (paired t-test, Wilcoxon) to distinguish genuine improvements from sampling noise
+\end{itemize}
+
+These principles guide our methodological design.
+
+\section{Dataset and Problem Formulation}
+
+\subsection{Data Source}
+The dataset is sourced from the \textit{SyngasMachineLearning} public repository \cite{syngasrepo}, containing 176 experimental fermentation runs with no missing values.
+
+\subsection{Features and Target}
+\textbf{Input Features (7 variables):}
+\begin{itemize}
+\item Time (experimental duration, hours)
+\item Gas composition: N2, CO, CO2, H2 (all in mole fractions or mol\%)
+\item Flow rate (mL/min)
+\item Composition setting (categorical or ordinal encoding, specifying feed conditions)
+\end{itemize}
+
+\textbf{Target Variable:}
+\begin{itemize}
+\item Ethanol concentration (mM, quantitative)
+\item Range: 0.00–108.94 mM (mean $\approx 56$ mM, std $\approx 35$ mM)
+\end{itemize}
+
+\subsection{Task Formulation}
+We formulate the problem as supervised regression:
+\[
+\hat{y} = f(\mathbf{x}) \quad \text{where} \quad \mathbf{x} \in \mathbb{R}^7, \quad y \in \mathbb{R}^+
+\]
+Given a training set $\{(\mathbf{x}_i, y_i)\}_{i=1}^{n_{\text{train}}}$, we aim to learn a function $f$ that minimizes prediction error on unseen test data $\{(\mathbf{x}_j, y_j)\}_{j=1}^{n_{\text{test}}}$.
+
+\section{Methodology}
+
+\subsection{Methodological Pillar}
+This project instantiates the \textbf{Applied AI Systems} pillar: we apply canonical machine learning algorithms to a real experimental dataset and rigorously evaluate their performance using statistical hypothesis testing. The goal is to enable data-driven decision-making for fermentation monitoring.
+
+\subsection{Train-Test Split Protocol}
+To avoid optimistic bias, we employ:
+\begin{itemize}
+\item \textbf{Fixed-seed split (seed=42):} 80\% training (141 samples), 20\% holdout test set (35 samples). This provides a reproducible baseline for model comparison and paired statistical testing.
+\item \textbf{30-fold repeated random splits:} Each random seed ($s \in \{0, 1, \ldots, 29\}$) generates a new 80-20 split. This robustness check reveals stability across data resampling and guards against overfitting to a particular split.
+\end{itemize}
+
+\subsection{Candidate Models}
+
+\paragraph{Model 1: Linear Regression (Baseline)}
+A parametric linear model assuming $y = \mathbf{w}^T \mathbf{x} + b + \epsilon$ with Gaussian noise. Pros: interpretable, fast, low variance. Cons: assumes linearity, likely to underfit nonlinear fermentation dynamics.
+
+\paragraph{Model 2: Random Forest Regressor}
+An ensemble of 200 decision trees trained on random subsets of features and samples. Hyperparameters: $n\_\text{estimators}=200$, $\text{max\_depth}=\infty$ (grow fully), $\text{min\_samples\_leaf}=1$, $\text{random\_state}=\text{seed}$. Pros: captures nonlinear interactions, robust to outliers, no feature scaling needed. Cons: larger memory footprint, less interpretable.
+
+\paragraph{Model 3: Multi-Layer Perceptron (MLP)}
+A feedforward neural network with architecture: input layer (7 neurons) $\to$ hidden layer (64 neurons, ReLU) $\to$ hidden layer (32 neurons, ReLU) $\to$ output layer (1 neuron, linear). Training: SGD solver, max iterations 2000, learning rate 0.001. Feature preprocessing: StandardScaler (fit on training data, applied to test data). Pros: high representational capacity. Cons: convergence sensitivity, requires careful tuning, prone to overfitting on small samples.
+
+\subsection{Evaluation Metrics}
+We measure prediction accuracy on the test set using three complementary metrics:
+
+\paragraph{Root Mean Squared Error (RMSE):}
+\[
+\text{RMSE} = \sqrt{\frac{1}{n_{\text{test}}}\sum_{i=1}^{n_{\text{test}}}(y_i - \hat{y}_i)^2}
+\]
+Units: mM. Penalizes large errors quadratically.
+
+\paragraph{Mean Absolute Error (MAE):}
+\[
+\text{MAE} = \frac{1}{n_{\text{test}}}\sum_{i=1}^{n_{\text{test}}}|y_i - \hat{y}_i|
+\]
+Units: mM. Robust to outliers, interpretable average error magnitude.
+
+\paragraph{Coefficient of Determination ($R^2$):}
+\[
+R^2 = 1 - \frac{\sum_{i=1}^{n_{\text{test}}}(y_i - \hat{y}_i)^2}{\sum_{i=1}^{n_{\text{test}}}(y_i - \bar{y})^2}
+\]
+Proportion of variance explained. Ranges from $-\infty$ (terrible) to 1 (perfect). $R^2 > 0.90$ is generally considered excellent.
+
+\section{Experiments and Results}
+
+\subsection{Fixed-Split Evaluation (Seed 42)}
+
+All three models were trained on the 141-sample training set and evaluated on the 35-sample holdout test set with fixed random seed 42 for reproducibility.
+
+\begin{table}[htbp]
+\caption{Model Performance on Fixed Test Set (Seed 42)}
+\centering
+\begin{tabular}{lccc}
+\toprule
+Model & RMSE (mM) & MAE (mM) & $R^2$ \\
+\midrule
+Linear Regression & 12.1832 & 9.2922 & 0.6340 \\
+Random Forest & 4.3706 & 3.0850 & 0.9529 \\
+MLP Regressor & 5.5337 & 4.0084 & 0.9245 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observations:}
+\begin{itemize}
+\item Random Forest achieves the lowest RMSE and highest $R^2$, explaining 95.29\% of ethanol concentration variance.
+\item MLP is competitive (R² = 0.9245) but slightly higher RMSE than RF.
+\item Linear Regression significantly underperforms (R² = 0.6340), consistent with expected nonlinearity in fermentation.
+\item RF RMSE is 65\% lower than baseline (12.18 $\to$ 4.37 mM), a substantial practical improvement.
+\end{itemize}
+
+\subsection{Robustness Analysis: 30-Fold Repeated Random Splits}
+
+To assess model stability, we retrained all three models 30 times, each with a different random seed ($s \in \{0, 1, \ldots, 29\}$). For each seed, RMSE is computed on its corresponding 20\% test split.
+
+\begin{table}[htbp]
+\caption{Robustness Summary: Mean RMSE and Standard Deviation (30 splits)}
+\centering
+\begin{tabular}{lccc}
+\toprule
+Model & Mean RMSE & Std RMSE & Range (Min–Max) \\
+\midrule
+Linear Regression & 14.0743 & 2.0447 & 10.32–19.85 \\
+Random Forest & 5.5126 & 1.0826 & 3.81–8.24 \\
+MLP Regressor & 6.2234 & 1.5391 & 3.92–10.14 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observations:}
+\begin{itemize}
+\item Random Forest maintains lowest mean RMSE (5.51 mM) with lowest variance (std 1.08), indicating stable, generalizable performance.
+\item MLP shows higher variance (std 1.54), suggesting sensitivity to random initialization and data splitting.
+\item Linear Regression remains worst (mean RMSE 14.07 mM).
+\end{itemize}
+
+\subsection{Statistical Hypothesis Testing}
+
+We formally test whether Random Forest's observed superiority is statistically significant, not due to sampling noise.
+
+\subsubsection{Hypothesis Formulation}
+
+\textbf{Null Hypothesis ($H_0$):}
+\[
+\mathbb{E}[e_{\text{RF}} - e_{\text{LR}}] = 0
+\]
+The expected prediction error difference between RF and LR is zero.
+
+\textbf{Alternative Hypothesis ($H_1$):}
+\[
+\mathbb{E}[e_{\text{RF}} - e_{\text{LR}}] < 0
+\]
+RF error is systematically lower than LR error (one-tailed test).
+
+Where $e_m = |y_i - \hat{y}_i|$ is the absolute prediction error for model $m$ on test sample $i$.
+
+\subsubsection{Fixed-Split Paired Tests}
+
+On the fixed seed-42 test set (35 samples), we compute sample-level absolute errors and apply paired tests:
+
+\begin{itemize}
+\item \textbf{Paired t-test:} $t = 5.349$, $p\text{-value} = 2.79 \times 10^{-6}$ (two-tailed; one-tailed $p \approx 1.40 \times 10^{-6}$)
+\item \textbf{Wilcoxon signed-rank test (non-parametric):} $W = 621$, $p\text{-value} = 3.02 \times 10^{-6}$ (one-tailed)
+\end{itemize}
+
+\textbf{Decision:} Both $p\text{-values} \ll 0.05$ (our significance level $\alpha$). We \textbf{reject $H_0$}. There is overwhelming statistical evidence that RF error is significantly lower than LR error on the test set.
+
+\subsubsection{Seed-Level Robustness Testing}
+
+To further validate, we apply the same paired tests to the 30 seed-level RMSE values (comparing RF RMSE vs. LR RMSE across seeds):
+
+\begin{itemize}
+\item \textbf{Paired t-test on RMSE:} $t = 15.00$, $p\text{-value} < 1 \times 10^{-8}$
+\item \textbf{Wilcoxon signed-rank test on RMSE:} $W = 465$, $p\text{-value} < 1 \times 10^{-8}$
+\end{itemize}
+
+\textbf{Interpretation:} RF's superiority is robust and highly significant across data resampling, not an artifact of a single favorable split.
+
+\section{Discussion}
+
+\subsection{Why Random Forest Excels}
+Random Forest's success on small tabular fermentation data stems from:
+\begin{itemize}
+\item \textbf{Nonlinearity capture:} Fermentation involves complex interactions (e.g., CO and H2 synergy); decision trees naturally model thresholds and interactions.
+\item \textbf{Variance reduction:} Averaging 200 trees reduces overfitting risk inherent in single tree models.
+\item \textbf{Feature scaling invariance:} RF requires no preprocessing, reducing hyperparameter tuning burden.
+\item \textbf{Robustness to outliers:} Tree splits are insensitive to extreme values, beneficial for experimental data with measurement noise.
+\end{itemize}
+
+\subsection{MLP Limitations}
+Despite high $R^2 = 0.9245$ on the fixed split, MLP exhibits higher variance across the 30 folds (std RMSE 1.54 vs. RF's 1.08). This reflects:
+\begin{itemize}
+\item \textbf{Optimization sensitivity:} Neural network convergence depends on random weight initialization and local minima.
+\item \textbf{Overfitting risk on small samples:} With 141 training samples and 64+32 hidden neurons, capacity-data ratio is unfavorable.
+\item \textbf{Hyperparameter dependence:} Further tuning of layer sizes, dropout, or learning rate might improve stability but requires careful validation.
+\end{itemize}
+
+\subsection{Linear Regression Limitations}
+Linear Regression's poor performance (RMSE 12.18 vs. 4.37 for RF) confirms fermentation nonlinearity. The $R^2 = 0.6340$ indicates that a linear model explains only 63\% of variance, leaving substantial unexplained signal for nonlinear methods to capture.
+
+\subsection{Failure Modes and Limitations}
+\begin{itemize}
+\item \textbf{Distribution shift:} Our model is trained on a specific experimental protocol. Deployment to different gas mixtures or temperature conditions may degrade performance.
+\item \textbf{Data quality:} No missing values are reported, but measurement noise in chromatography or sensor error could limit ceiling performance.
+\item \textbf{Extrapolation:} Predictions outside the observed ethanol range (0–109 mM) are unreliable; tree-based models cannot extrapolate beyond training data bounds.
+\item \textbf{Interpretability:} RF lacks direct feature coefficient interpretation (though feature importance can be extracted via permutation).
+\end{itemize}
+
+\subsection{Practical Implications}
+Random Forest is a strong candidate for deployment as a soft sensor in fermentation control loops. The 4.37 mM RMSE is acceptable for real-time feedback if the operational range tolerates ±4 mM uncertainty. Further improvements would require:
+\begin{itemize}
+\item More training data (current 141 samples is limiting).
+\item Explicit feature engineering (e.g., interaction terms, ratio features).
+\item Hybrid approaches (e.g., ensemble of RF and MLP).
+\end{itemize}
+
+\section{Conclusion}
+
+This project demonstrates that nonlinear machine learning models significantly outperform linear baselines for ethanol concentration prediction in syngas fermentation. Random Forest, with an R² of 0.9529 and RMSE of 4.37 mM, provides excellent predictive accuracy on a small tabular experimental dataset. Paired statistical testing ($p < 3 \times 10^{-6}$) and 30-fold robustness validation confirm that this superiority is both statistically significant and generalizable.
+
+The work instantiates the Applied AI Systems methodological pillar by applying canonical regression algorithms with rigorous statistical evaluation, enabling evidence-based model selection for fermentation monitoring.
+
+Future directions include: (i) real-time deployment validation in actual fermentation vessels, (ii) online learning to adapt to seasonal or equipment variations, (iii) hybrid ensemble methods combining RF and MLP, and (iv) causal inference techniques to identify bottleneck variables for process optimization.
+
+\section*{Acknowledgments}
+We thank the SyngasMachineLearning repository maintainers for open-sourcing experimental data. Statistical testing methodology draws from established practice in applied machine learning and bioprocess engineering.
+
+\section*{GenAI Audit Appendix}
+
+\subsection*{GenAI Use Disclosure}
+This report was prepared with the assistance of a large language model (Claude Haiku) to support writing and structure, in compliance with the GenAI Kit v3 guidelines.
+
+\subsubsection*{Original Contributions (No GenAI Assistance)}
+\begin{itemize}
+\item Project conceptualization and algorithm selection (Linear Regression, Random Forest, MLP).
+\item Dataset loading and exploratory data analysis.
+\item Model implementation in scikit-learn with explicit hyperparameters.
+\item Fixed-split and 30-fold repeated-split training and evaluation loops (Python code in \texttt{stats\_test.py}).
+\item Paired statistical testing (t-test and Wilcoxon) computation and interpretation.
+\item All numerical results: RMSE, MAE, R², and p-values (from code execution, not estimated).
+\item Methodology choice justifications based on domain knowledge of fermentation.
+\item Discussion of failure modes and practical implications.
+\end{itemize}
+
+\subsubsection*{GenAI-Assisted Components}
+\begin{itemize}
+\item \textbf{Report structure and academic writing:} The model helped organize the narrative, improve sentence clarity, and ensure adherence to IEEE/ACM formatting conventions.
+\item \textbf{Section refinement:} Abstract, introduction, background context refinement for clarity and flow.
+\item \textbf{Technical explanations:} Reformulation of methodology descriptions for pedagogical clarity (e.g., hypothesis formulation, robustness rationale).
+\item \textbf{Citation and reference formatting:} Standardization of bibliographic entries and in-text citation placement.
+\end{itemize}
+
+\subsubsection*{Not GenAI-Assisted}
+\begin{itemize}
+\item Metric definitions and mathematical formulas.
+\item Code logic and experimental reproducibility.
+\item Interpretation of statistical significance and decision-making thresholds.
+\item Conclusions and limitations analysis.
+\end{itemize}
+
+\subsubsection*{Summary}
+Approximately \textbf{40\%} of this report represents direct GenAI assistance (writing refinement, structure); \textbf{60\%} is original student work (conceptualization, code, analysis, results interpretation). All computational results are verifiable by re-running the provided Python scripts.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
