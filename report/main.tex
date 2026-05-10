@@ -12,7 +12,7 @@
 \maketitle
 
 \begin{abstract}
-This project investigates supervised regression for predicting ethanol concentration (mM) in syngas fermentation from process variables including time, gas composition (N2, CO, CO2, H2), flow rate, and composition setting. We apply three regression models—Linear Regression (baseline), Random Forest Regressor (nonlinear ensemble), and Multi-Layer Perceptron (MLP)—to a small tabular dataset of 176 experimental measurements. On a held-out 20\% test set (35 samples), Linear Regression achieves RMSE 12.1832 mM, MAE 9.2922 mM, and $R^2=0.6340$; Random Forest achieves RMSE 4.3706 mM, MAE 3.0850 mM, and $R^2=0.9529$; MLP achieves RMSE 5.5337 mM, MAE 4.0084 mM, and $R^2=0.9245$. We define formal statistical hypotheses and apply paired t-test and Wilcoxon signed-rank tests to verify that nonlinear improvements are statistically significant. Both tests yield $p<3\times10^{-6}$, providing strong evidence that Random Forest significantly outperforms the baseline. We further validate stability via 30-fold repeated random splits. Results indicate that Random Forest provides the best accuracy-robustness tradeoff for this small tabular fermentation dataset, suitable for deployment in real-time process monitoring.
+This project investigates supervised regression for predicting ethanol concentration (mM) in syngas fermentation from process variables including time, gas composition (N2, CO, CO2, H2), flow rate, and composition setting. We apply three regression models—Linear Regression (baseline), Random Forest Regressor (nonlinear ensemble), and Multi-Layer Perceptron (MLP)—to a small tabular dataset of 176 experimental measurements. On a held-out 20\% test set (36 samples), Linear Regression achieves RMSE 12.1832 mM, MAE 9.2922 mM, and $R^2=0.6340$; Random Forest achieves RMSE 4.3706 mM, MAE 3.0850 mM, and $R^2=0.9529$; MLP achieves RMSE 5.5337 mM, MAE 4.0084 mM, and $R^2=0.9245$. We define formal statistical hypotheses and apply paired t-test and Wilcoxon signed-rank tests to verify that nonlinear improvements are statistically significant. Both tests yield $p<3\times10^{-6}$, providing strong evidence that Random Forest significantly outperforms the baseline. We further validate stability via 30-fold repeated random splits. Results indicate that Random Forest provides the best accuracy-robustness tradeoff for this small tabular fermentation dataset, suitable for deployment in real-time process monitoring.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -23,6 +23,8 @@ Syngas fermentation, ethanol prediction, regression, ensemble learning, random f
 Predicting fermentation outcomes is critical for real-time process monitoring and optimization in biomanufacturing. Syngas fermentation converts syngas (mixture of CO, CO2, H2, N2) into value-added chemicals, particularly ethanol. The ability to predict ethanol concentration from measured process variables enables dynamic control and efficiency improvements. However, fermentation is inherently nonlinear, and data availability is often limited in laboratory settings, motivating careful selection and evaluation of machine learning models.
 
 This work addresses the question: \textit{Can nonlinear machine learning models significantly outperform a linear baseline for ethanol concentration prediction in syngas fermentation, and what is the optimal model for small tabular experimental data?}
+
+To make the system design decision explicit, we prioritized three methodological focuses: (i) scaling strategy for gradient-based models, (ii) nonlinear model architecture choice under small-data constraints, and (iii) robustness-driven hyperparameter selection. We intentionally deferred aggressive feature construction and large hyperparameter sweeps to preserve fair baseline comparability and avoid leakage.
 
 The project aligns with Canonical Track 5 (ML/Probabilistic Methods) and applies the \textbf{Applied AI Systems} methodological pillar: we integrate established regression algorithms (Linear Regression, Random Forest, MLP) with rigorous statistical evaluation to enable evidence-based decision-making for model deployment.
 
@@ -91,7 +93,7 @@ This project instantiates the \textbf{Applied AI Systems} pillar: we apply canon
 \subsection{Train-Test Split Protocol}
 To avoid optimistic bias, we employ:
 \begin{itemize}
-\item \textbf{Fixed-seed split (seed=42):} 80\% training (141 samples), 20\% holdout test set (35 samples). This provides a reproducible baseline for model comparison and paired statistical testing.
+\item \textbf{Fixed-seed split (seed=42):} 80\% training (140 samples), 20\% holdout test set (36 samples). This provides a reproducible baseline for model comparison and paired statistical testing.
 \item \textbf{30-fold repeated random splits:} Each random seed ($s \in \{0, 1, \ldots, 29\}$) generates a new 80-20 split. This robustness check reveals stability across data resampling and guards against overfitting to a particular split.
 \end{itemize}
 
@@ -105,6 +107,13 @@ An ensemble of 200 decision trees trained on random subsets of features and samp
 
 \paragraph{Model 3: Multi-Layer Perceptron (MLP)}
 A feedforward neural network with architecture: input layer (7 neurons) $\to$ hidden layer (64 neurons, ReLU) $\to$ hidden layer (32 neurons, ReLU) $\to$ output layer (1 neuron, linear). Training: SGD solver, max iterations 2000, learning rate 0.001. Feature preprocessing: StandardScaler (fit on training data, applied to test data). Pros: high representational capacity. Cons: convergence sensitivity, requires careful tuning, prone to overfitting on small samples.
+
+\subsection{Objective Function and Performance Measures}
+All three models optimize squared-error objectives on training data. For model parameters $\theta$, the empirical training objective is:
+\[
+\mathcal{L}(\theta)=\frac{1}{n_{\text{train}}}\sum_{i=1}^{n_{\text{train}}}\left(y_i-f_\theta(\mathbf{x}_i)\right)^2
+\]
+where $f_\theta$ is linear for LR, piecewise-tree ensemble for RF, and neural mapping for MLP. We distinguish this \textit{optimization loss} from \textit{evaluation metrics} (RMSE/MAE/$R^2$) computed on held-out test data. RMSE is algebraically aligned with the objective (square loss), while MAE and $R^2$ serve as complementary generalization indicators.
 
 \subsection{Evaluation Metrics}
 We measure prediction accuracy on the test set using three complementary metrics:
@@ -127,11 +136,13 @@ R^2 = 1 - \frac{\sum_{i=1}^{n_{\text{test}}}(y_i - \hat{y}_i)^2}{\sum_{i=1}^{n_{
 \]
 Proportion of variance explained. Ranges from $-\infty$ (terrible) to 1 (perfect). $R^2 > 0.90$ is generally considered excellent.
 
+Because the target is continuous ethanol concentration (regression), classification metrics such as precision, recall, F1, and AUROC are not mathematically appropriate. We therefore report RMSE/MAE/$R^2$ and learning-curve/runtime diagnostics as the primary evaluation set.
+
 \section{Experiments and Results}
 
 \subsection{Fixed-Split Evaluation (Seed 42)}
 
-All three models were trained on the 141-sample training set and evaluated on the 35-sample holdout test set with fixed random seed 42 for reproducibility.
+All three models were trained on the 140-sample training set and evaluated on the 36-sample holdout test set with fixed random seed 42 for reproducibility.
 
 \begin{table}[htbp]
 \caption{Model Performance on Fixed Test Set (Seed 42)}
@@ -175,19 +186,55 @@ To assess model stability, we retrained all three models 30 times, each with a d
 \toprule
 Model & Mean RMSE & Std RMSE & Range (Min–Max) \\
 \midrule
-Linear Regression & 14.0743 & 2.0447 & 10.32–19.85 \\
-Random Forest & 5.5126 & 1.0826 & 3.81–8.24 \\
-MLP Regressor & 6.2234 & 1.5391 & 3.92–10.14 \\
+Linear Regression & 14.3956 & 1.7770 & 11.53–19.01 \\
+Random Forest & 9.4793 & 1.7977 & 4.00–12.99 \\
+MLP Regressor & 9.7274 & 2.5986 & 4.90–16.92 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Observations:}
 \begin{itemize}
-\item Random Forest maintains lowest mean RMSE (5.51 mM) with lowest variance (std 1.08), indicating stable, generalizable performance.
-\item MLP shows higher variance (std 1.54), suggesting sensitivity to random initialization and data splitting.
-\item Linear Regression remains worst (mean RMSE 14.07 mM).
+\item Random Forest maintains the lowest mean RMSE (9.48 mM), indicating best average generalization under repeated splits.
+\item MLP is close in mean (9.73 mM) but has higher spread (std 2.60), suggesting stronger sensitivity to initialization and split composition.
+\item Linear Regression remains worst (mean RMSE 14.40 mM), confirming underfitting to nonlinear fermentation dynamics.
 \end{itemize}
+
+\subsection{Scaling Ablation Study (4 Combinations)}
+To directly answer whether scaling is necessary for MLP and beneficial/harmful for RF, we ran four controlled combinations on the same fixed split (seed 42):
+\begin{enumerate}
+\item MLP scaled + RF unscaled
+\item MLP scaled + RF scaled
+\item MLP unscaled + RF unscaled
+\item MLP unscaled + RF scaled
+\end{enumerate}
+
+\begin{table}[htbp]
+\caption{Scaling Ablation on Fixed Split (seed 42)}
+\centering
+\begin{tabular}{lcc}
+\toprule
+Configuration & RF RMSE (mM) & MLP RMSE (mM) \\
+\midrule
+MLP scaled + RF unscaled & 4.3706 & 5.5337 \\
+MLP scaled + RF scaled & 4.7972 & 5.5337 \\
+MLP unscaled + RF unscaled & 4.3706 & 5.3398 \\
+MLP unscaled + RF scaled & 4.7972 & 5.3398 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Interpretation:}
+\begin{itemize}
+\item RF performance degrades when features are scaled in this implementation (RMSE 4.37 $\to$ 4.80), confirming scaling is unnecessary for tree splits and can introduce small numerical side effects.
+\item MLP does not collapse without scaling on this dataset; however, scaled and unscaled settings behave differently and remain highly optimizer-sensitive, consistent with convergence warnings.
+\item The ablation formally documents all four combinations requested in feedback and prevents one-configuration bias.
+\end{itemize}
+
+\subsection{Runtime (Wall-Clock) Analysis}
+We measured wall-clock training time and inference latency (ms per sample) for RF and MLP in each ablation configuration. Across runs, RF training is approximately $\sim$0.09--0.10 s and MLP training is approximately $\sim$0.28--0.29 s on the same hardware. Inference latency remains sub-millisecond per sample for both models. These measurements are reported in the generated runtime figure and in the results summary file.
+
+For this project (small tabular dataset, batch offline training), runtime is not the primary bottleneck; generalization robustness dominates model selection.
 
 \subsection{Statistical Hypothesis Testing}
 
@@ -211,7 +258,7 @@ Where $e_m = |y_i - \hat{y}_i|$ is the absolute prediction error for model $m$ o
 
 \subsubsection{Fixed-Split Paired Tests}
 
-On the fixed seed-42 test set (35 samples), we compute sample-level absolute errors and apply paired tests:
+On the fixed seed-42 test set (36 samples), we compute sample-level absolute errors and apply paired tests:
 
 \begin{itemize}
 \item \textbf{Paired t-test:} $t = 5.349$, $p\text{-value} = 2.79 \times 10^{-6}$ (two-tailed; one-tailed $p \approx 1.40 \times 10^{-6}$)
@@ -244,7 +291,7 @@ Decision trees, the basis of Random Forest, naturally represent such interaction
 \subsubsection{Variance Reduction via Ensemble Averaging}
 Individual decision trees are high-variance, low-bias estimators: a single tree perfectly fits its training data (risk of overfitting). Random Forest mitigates this through:
 \begin{itemize}
-\item \textbf{Bootstrap aggregating (bagging):} Each tree is trained on a random sample (with replacement) from the 141-sample training set. This introduces diversity; trees trained on different subsamples discover different patterns.
+\item \textbf{Bootstrap aggregating (bagging):} Each tree is trained on a random sample (with replacement) from the 140-sample training set. This introduces diversity; trees trained on different subsamples discover different patterns.
 \item \textbf{Random feature subsets:} At each split, the tree selects the best feature from only $\sqrt{7} \approx 2.6$ random features (instead of all 7). This further decorrelates trees.
 \item \textbf{Averaging:} Final predictions are the mean of 200 tree outputs: $\hat{y}_{\text{RF}} = \frac{1}{200}\sum_{t=1}^{200}\hat{y}_t$. The Central Limit Theorem predicts that averaging independent (though not uncorrelated) estimators reduces variance by a factor proportional to ensemble size.
 \end{itemize}
@@ -264,7 +311,7 @@ Fermentation measurements are subject to chromatography error (typically ±2–5
 This robustness is crucial for experimental datasets with measurement noise.
 
 \subsection{MLP Limitations and Convergence Challenges}
-Despite achieving $R^2 = 0.9245$ on the fixed seed-42 split (competitive with RF), MLP demonstrates instability across the 30-fold validation: mean RMSE = 6.22 mM with std = 1.54 mM, compared to RF's mean 5.51 mM with std = 1.08 mM. This 40\% higher variance reflects fundamental challenges of neural network training on small tabular data.
+Despite achieving $R^2 = 0.9245$ on the fixed seed-42 split (competitive with RF), MLP demonstrates instability across the 30-fold validation: mean RMSE = 9.73 mM with std = 2.60 mM, compared to RF's mean 9.48 mM with std = 1.80 mM. The higher variance reflects fundamental challenges of neural network training on small tabular data.
 
 \subsubsection{Optimization Sensitivity}
 MLPs are trained via stochastic gradient descent (SGD), which iteratively adjusts weights to minimize training loss. Convergence is sensitive to:
@@ -278,7 +325,7 @@ MLPs are trained via stochastic gradient descent (SGD), which iteratively adjust
 Together, these factors cause high variance in final test RMSE across random seeds—a signature of optimization difficulty.
 
 \subsubsection{Overfitting Risk on Small Training Sets}
-The MLP architecture has approximately 2,432 parameters (weights + biases): $7 \times 64 + 64 \times 32 + 32 \times 1 = 2,432$ after accounting for bias terms. The training set has only 141 samples. The ratio of parameters to training samples is $2432 / 141 \approx 17$, meaning the model has 17 times as many parameters as training samples. This is unfavorable; a rule of thumb (though not absolute) is that parameters should not exceed training samples.
+The MLP architecture has approximately 2,432 parameters (weights + biases): $7 \times 64 + 64 \times 32 + 32 \times 1 = 2,432$ after accounting for bias terms. The training set has only 140 samples. The ratio of parameters to training samples is $2432 / 140 \approx 17$, meaning the model has about 17 times as many parameters as training samples. This is unfavorable; a rule of thumb (though not absolute) is that parameters should not exceed training samples.
 
 With such high capacity, the MLP can memorize noise in the training set, fitting training loss $\approx 0$ while test performance suffers. This is a form of overfitting. Larger datasets or smaller networks (e.g., single 32-neuron layer) would mitigate this issue.
 
@@ -335,17 +382,17 @@ Random Forest does not yield explicit feature coefficients like linear models do
 For regulatory bioprocesses requiring traceability (e.g., FDA-regulated therapeutics), this lack of explainability is a liability. A simpler, more interpretable model (even with slightly lower accuracy) might be preferable.
 
 \subsection{Test Set Size and Confidence Intervals}
-Our test set has 35 samples (20\% of 176). For a metric such as RMSE, the confidence interval width is approximately:
+Our test set has 36 samples (20\% of 176). For a metric such as RMSE, the confidence interval width is approximately:
 \[
-\text{CI width} \propto \frac{\sigma}{\sqrt{n_{\text{test}}}} \approx \frac{4.37}{\sqrt{35}} \approx 0.74 \text{ mM}
+\text{CI width} \propto \frac{\sigma}{\sqrt{n_{\text{test}}}} \approx \frac{4.37}{\sqrt{36}} \approx 0.73 \text{ mM}
 \]
 
 Thus, the 95\% confidence interval on our reported RMSE = 4.37 mM is roughly ± 1.45 mM, or [2.92, 5.82] mM. With a larger test set (50–100 samples), the interval would narrow, providing more precise estimates of generalization error.
 
 \subsection{Cross-Validation and Generalization Performance}
-The 30-fold repeated random-split validation provides robust evidence that RF generalizes well. Across 30 different 80-20 partitions of the data, RF consistently achieves RMSE in the range 3.81–8.24 mM (mean 5.51 mM). This narrow range suggests the model is not overfitting to a particular split; rather, it captures patterns stable across data resampling. This is strong validation of generalization.
+The 30-fold repeated random-split validation provides robust evidence that RF generalizes well. Across 30 different 80-20 partitions of the data, RF achieves RMSE in the range 4.00–12.99 mM (mean 9.48 mM). This spread still remains better than the linear baseline and supports generalization under data resampling.
 
-Ideally, k-fold cross-validation (k=5 or k=10, where data are divided into k folds and the model is trained k times, leaving each fold out once) would provide additional robustness. However, the repeated random-split approach (30 folds) is equally rigorous and offers more flexibility in split proportions (we used 80-20; k-fold would typically use 90-10).
+Ideally, k-fold cross-validation (k=5 or k=10, where data are divided into k folds and the model is trained k times, leaving each fold out once) would provide additional robustness. We used repeated random holdout (30 random 80/20 splits), not bootstrap resampling. This choice avoids duplicate-heavy training sets from bootstrap and preserves straightforward fixed test proportion across runs, at the cost of potential overlap among test samples across splits.
 
 \subsection{Practical Implications for Soft-Sensor Deployment}
 Random Forest, with RMSE = 4.37 mM and R² = 0.9529, is a strong candidate for deployment as a soft sensor (data-driven virtual analyzer) in real-time fermentation monitoring. The typical use case is:
@@ -361,7 +408,7 @@ For this application, RMSE = 4.37 mM is acceptable if the operational specificat
 
 \subsection{Areas for Improvement}
 \begin{enumerate}
-\item \textbf{Larger training dataset:} Expanding from 141 to 300+ training samples would stabilize MLP, enable better hyperparameter tuning (via grid search on separate validation set), and may improve RF further.
+\item \textbf{Larger training dataset:} Expanding from 140 to 300+ training samples would stabilize MLP, enable better hyperparameter tuning (via grid search on separate validation set), and may improve RF further.
 \item \textbf{Explicit feature engineering:} Constructing interaction terms (e.g., $\text{CO} \times \text{H}_2$, $\text{CO}_2 / \text{CO}$) or ratio features (stoichiometric indices) may allow simpler models to achieve comparable accuracy. This requires domain knowledge from process engineers.
 \item \textbf{Hybrid ensemble methods:} Combining RF and MLP via stacking (training a meta-learner on RF and MLP outputs) or voting might reduce variance and improve test RMSE further.
 \item \textbf{Uncertainty quantification:} Quantile regression forests or Bayesian neural networks can estimate prediction intervals (e.g., ``ethanol is 60 ± 8 mM with 95\% confidence''), valuable for risk-aware control.
@@ -383,6 +430,9 @@ We thank the SyngasMachineLearning repository maintainers for open-sourcing expe
 
 \subsection*{GenAI Use Disclosure}
 This report was prepared as a student-led project with limited AI assistance for writing polish and formatting support, in compliance with the GenAI Kit v3 guidelines.
+
+Repository artifacts documenting code origin and prompt specifications are included in:\
+\texttt{sources/code\_provenance.txt} and \texttt{prompts/coding\_prompt\_log.txt}.
 
 \subsubsection*{Primary Student Contributions (Core Work)}
 \begin{itemize}

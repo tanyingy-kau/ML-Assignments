@@ -14,8 +14,8 @@ Random Forest:
   Test:  RMSE=4.3706,  MAE=3.0850,  R²=0.9529
 
 MLP:
-  Train: RMSE=8.2746, MAE=5.8137, R²=0.8416
-  Test:  RMSE=5.9014,  MAE=5.0166,  R²=0.9141
+  Train: RMSE=6.0592, MAE=3.8702, R²=0.9151
+  Test:  RMSE=5.5337,  MAE=4.0084,  R²=0.9245
 
 ── Statistical Tests (sample-level, LR vs RF) ──
   Paired t-test: t=5.3489, p=2.79e-06 ***SIGNIFICANT
@@ -23,9 +23,27 @@ MLP:
 
 ── 30-Fold Robustness (RMSE mean ± std) ──
   LR:  14.3956 ± 1.7770 mM
-  RF:  9.4793 ± 1.7977 mM
-  MLP: 9.7274 ± 2.5986 mM
+  RF:  4.7972 ± 0.0000 mM
+  MLP: 5.3398 ± 0.0000 mM
 
 ── Seed-level Tests (LR RMSE > RF RMSE) ──
-  Paired t-test: t=15.0015, p=1.68e-15 ***SIGNIFICANT
+  Paired t-test: t=29.0875, p=2.62e-23 ***SIGNIFICANT
   Wilcoxon:      W=465.0000, p=9.31e-10 ***SIGNIFICANT
+
+── Scaling Ablation (Fixed Split, 4 combinations) ──
+
+MLP scaled + RF unscaled:
+  RF:  RMSE=4.3706, MAE=3.0850, R²=0.9529, Train=0.099s, Infer=0.711ms/sample
+  MLP: RMSE=5.5337, MAE=4.0084, R²=0.9245, Train=0.289s, Infer=0.004ms/sample
+
+MLP scaled + RF scaled:
+  RF:  RMSE=4.7972, MAE=3.3365, R²=0.9432, Train=0.093s, Infer=0.711ms/sample
+  MLP: RMSE=5.5337, MAE=4.0084, R²=0.9245, Train=0.279s, Infer=0.004ms/sample
+
+MLP unscaled + RF unscaled:
+  RF:  RMSE=4.3706, MAE=3.0850, R²=0.9529, Train=0.092s, Infer=0.717ms/sample
+  MLP: RMSE=5.3398, MAE=4.0529, R²=0.9297, Train=0.280s, Infer=0.004ms/sample
+
+MLP unscaled + RF scaled:
+  RF:  RMSE=4.7972, MAE=3.3365, R²=0.9432, Train=0.099s, Infer=0.711ms/sample
+  MLP: RMSE=5.3398, MAE=4.0529, R²=0.9297, Train=0.289s, Infer=0.004ms/sample

@@ -11,6 +11,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+from time import perf_counter
 from scipy.stats import ttest_rel, wilcoxon
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
@@ -46,6 +47,18 @@ def savefig(name):
     plt.savefig(path, dpi=150, bbox_inches="tight")
     plt.close()
     print(f"  Saved: {path}")
+
+
+def timed_fit_predict(model, X_tr, y_tr, X_te):
+    t0 = perf_counter()
+    model.fit(X_tr, y_tr)
+    train_sec = perf_counter() - t0
+
+    t1 = perf_counter()
+    pred = model.predict(X_te)
+    infer_total_sec = perf_counter() - t1
+    infer_ms_per_sample = (infer_total_sec / max(len(X_te), 1)) * 1000.0
+    return pred, train_sec, infer_ms_per_sample
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -120,8 +133,8 @@ rf.fit(X_train, y_train)
 pred_rf_train = rf.predict(X_train)
 pred_rf_test = rf.predict(X_test)
 
-# MLP: record loss curve during training
-mlp = MLPRegressor(
+# MLP loss-curve model (warm-start, one epoch per fit)
+mlp_curve = MLPRegressor(
     hidden_layer_sizes=(64, 32),
     max_iter=1,
     warm_start=True,
@@ -131,11 +144,14 @@ mlp = MLPRegressor(
 train_losses = []
 MAX_ITER = 500
 for epoch in range(MAX_ITER):
-    mlp.fit(X_train_s, y_train)
-    train_losses.append(mlp.loss_)
+    mlp_curve.fit(X_train_s, y_train)
+    train_losses.append(mlp_curve.loss_)
 
-pred_mlp_train = mlp.predict(X_train_s)
-pred_mlp_test = mlp.predict(X_test_s)
+# MLP evaluation model (same setup used in ablation table for fair comparison)
+mlp_eval = MLPRegressor(hidden_layer_sizes=(64, 32), max_iter=2000, random_state=RANDOM_SEED)
+mlp_eval.fit(X_train_s, y_train)
+pred_mlp_train = mlp_eval.predict(X_train_s)
+pred_mlp_test = mlp_eval.predict(X_test_s)
 
 print("  Linear Regression — done")
 print("  Random Forest     — done")
@@ -312,7 +328,7 @@ fig.suptitle("Figure 9: Absolute Error Distribution on Test Set", fontsize=13, f
 # Boxplot
 bp = axes[0].boxplot(
     [err_lr, err_mlp, err_rf],
-    labels=["LR", "MLP", "RF"],
+    tick_labels=["LR", "MLP", "RF"],
     patch_artist=True,
     medianprops=dict(color="black", linewidth=2),
 )
@@ -383,7 +399,7 @@ mlp_rmse = rep[rep["model"] == "MLP"]["rmse"].values
 fig, ax = plt.subplots(figsize=(8, 5))
 bp = ax.boxplot(
     [lr_rmse, mlp_rmse, rf_rmse],
-    labels=["Linear Regression", "MLP", "Random Forest"],
+    tick_labels=["Linear Regression", "MLP", "Random Forest"],
     patch_artist=True,
     medianprops=dict(color="black", linewidth=2),
     notch=False,
@@ -420,7 +436,120 @@ plt.tight_layout()
 savefig("fig11_robustness_line.png")
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 7. SEED-LEVEL STATISTICAL TESTS
+# 7. SCALING ABLATION (4 COMBINATIONS) + RUNTIME MEASUREMENT
+# ══════════════════════════════════════════════════════════════════════════════
+print("\nRunning scaling ablation (4 combinations)...")
+ablation_configs = [
+    ("MLP scaled + RF unscaled", True,  False),
+    ("MLP scaled + RF scaled",   True,  True),
+    ("MLP unscaled + RF unscaled", False, False),
+    ("MLP unscaled + RF scaled",   False, True),
+]
+
+ablation_rows = []
+for combo_name, mlp_scaled, rf_scaled in ablation_configs:
+    # Use the same fixed split to isolate preprocessing effect.
+    sc_combo = StandardScaler()
+    X_tr_scaled = sc_combo.fit_transform(X_train)
+    X_te_scaled = sc_combo.transform(X_test)
+
+    X_tr_mlp = X_tr_scaled if mlp_scaled else X_train.values
+    X_te_mlp = X_te_scaled if mlp_scaled else X_test.values
+    X_tr_rf = X_tr_scaled if rf_scaled else X_train.values
+    X_te_rf = X_te_scaled if rf_scaled else X_test.values
+
+    rf_model = RandomForestRegressor(n_estimators=200, random_state=RANDOM_SEED, n_jobs=-1)
+    rf_pred, rf_train_sec, rf_infer_ms = timed_fit_predict(rf_model, X_tr_rf, y_train, X_te_rf)
+    rf_rmse, rf_mae, rf_r2 = metrics(y_test, rf_pred)
+
+    mlp_model = MLPRegressor(hidden_layer_sizes=(64, 32), max_iter=2000, random_state=RANDOM_SEED)
+    mlp_pred, mlp_train_sec, mlp_infer_ms = timed_fit_predict(mlp_model, X_tr_mlp, y_train, X_te_mlp)
+    mlp_rmse, mlp_mae, mlp_r2 = metrics(y_test, mlp_pred)
+
+    ablation_rows.extend([
+        [combo_name, "RF", rf_scaled, rf_rmse, rf_mae, rf_r2, rf_train_sec, rf_infer_ms],
+        [combo_name, "MLP", mlp_scaled, mlp_rmse, mlp_mae, mlp_r2, mlp_train_sec, mlp_infer_ms],
+    ])
+
+ablation_df = pd.DataFrame(
+    ablation_rows,
+    columns=["combo", "model", "scaled", "rmse", "mae", "r2", "train_sec", "infer_ms_per_sample"],
+)
+print(ablation_df.to_string(index=False))
+
+ablation_path = os.path.join(os.path.dirname(__file__), "scaling_ablation_results.csv")
+ablation_df.to_csv(ablation_path, index=False)
+print(f"  Saved ablation table: {ablation_path}")
+
+# Figure 12: RMSE across the four scaling combinations (RF vs MLP).
+print("[Fig 12] Scaling ablation RMSE comparison...")
+fig, ax = plt.subplots(figsize=(12, 5))
+combo_labels = [c[0] for c in ablation_configs]
+x = np.arange(len(combo_labels))
+w = 0.38
+rf_vals = [
+    ablation_df[(ablation_df["combo"] == lbl) & (ablation_df["model"] == "RF")]["rmse"].iloc[0]
+    for lbl in combo_labels
+]
+mlp_vals = [
+    ablation_df[(ablation_df["combo"] == lbl) & (ablation_df["model"] == "MLP")]["rmse"].iloc[0]
+    for lbl in combo_labels
+]
+ax.bar(x - w / 2, rf_vals, width=w, label="RF", color="#55A868", alpha=0.85)
+ax.bar(x + w / 2, mlp_vals, width=w, label="MLP", color="#C44E52", alpha=0.85)
+ax.set_xticks(x)
+ax.set_xticklabels(combo_labels, rotation=15, ha="right")
+ax.set_ylabel("Test RMSE (mM)")
+ax.set_title("Figure 12: Scaling Ablation (Fixed Split, seed=42)")
+ax.grid(True, axis="y", alpha=0.3)
+ax.legend()
+plt.tight_layout()
+savefig("fig12_scaling_ablation_rmse.png")
+
+# Figure 13: Wall-clock training time + inference time per sample.
+print("[Fig 13] Runtime comparison (train/inference)...")
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+rf_train = [
+    ablation_df[(ablation_df["combo"] == lbl) & (ablation_df["model"] == "RF")]["train_sec"].iloc[0]
+    for lbl in combo_labels
+]
+mlp_train = [
+    ablation_df[(ablation_df["combo"] == lbl) & (ablation_df["model"] == "MLP")]["train_sec"].iloc[0]
+    for lbl in combo_labels
+]
+rf_infer = [
+    ablation_df[(ablation_df["combo"] == lbl) & (ablation_df["model"] == "RF")]["infer_ms_per_sample"].iloc[0]
+    for lbl in combo_labels
+]
+mlp_infer = [
+    ablation_df[(ablation_df["combo"] == lbl) & (ablation_df["model"] == "MLP")]["infer_ms_per_sample"].iloc[0]
+    for lbl in combo_labels
+]
+
+axes[0].bar(x - w / 2, rf_train, width=w, label="RF", color="#55A868", alpha=0.85)
+axes[0].bar(x + w / 2, mlp_train, width=w, label="MLP", color="#C44E52", alpha=0.85)
+axes[0].set_xticks(x)
+axes[0].set_xticklabels(combo_labels, rotation=15, ha="right")
+axes[0].set_ylabel("Training Time (s)")
+axes[0].set_title("Wall-clock Training Time")
+axes[0].grid(True, axis="y", alpha=0.3)
+axes[0].legend()
+
+axes[1].bar(x - w / 2, rf_infer, width=w, label="RF", color="#55A868", alpha=0.85)
+axes[1].bar(x + w / 2, mlp_infer, width=w, label="MLP", color="#C44E52", alpha=0.85)
+axes[1].set_xticks(x)
+axes[1].set_xticklabels(combo_labels, rotation=15, ha="right")
+axes[1].set_ylabel("Inference Time (ms/sample)")
+axes[1].set_title("Inference Runtime")
+axes[1].grid(True, axis="y", alpha=0.3)
+axes[1].legend()
+
+plt.suptitle("Figure 13: Runtime Analysis for Scaling Ablation", fontweight="bold")
+plt.tight_layout()
+savefig("fig13_runtime_ablation.png")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 8. SEED-LEVEL STATISTICAL TESTS
 # ══════════════════════════════════════════════════════════════════════════════
 t2_stat, t2_p = ttest_rel(lr_rmse, rf_rmse, alternative="greater")
 w2_stat, w2_p = wilcoxon(lr_rmse, rf_rmse, alternative="greater")
@@ -429,7 +558,7 @@ print(f"  Paired t-test:  t={t2_stat:.4f}, p={t2_p:.2e}")
 print(f"  Wilcoxon test:  W={w2_stat:.4f}, p={w2_p:.2e}")
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 8. SAVE RESULTS SUMMARY
+# 9. SAVE RESULTS SUMMARY
 # ══════════════════════════════════════════════════════════════════════════════
 summary_path = os.path.join(FIG_DIR, "..", "results_summary.txt")
 with open(summary_path, "w", encoding="utf-8") as f:
@@ -457,6 +586,20 @@ with open(summary_path, "w", encoding="utf-8") as f:
     f.write("\n── Seed-level Tests (LR RMSE > RF RMSE) ──\n")
     f.write(f"  Paired t-test: t={t2_stat:.4f}, p={t2_p:.2e} {'***SIGNIFICANT' if t2_p < 0.05 else ''}\n")
     f.write(f"  Wilcoxon:      W={w2_stat:.4f}, p={w2_p:.2e} {'***SIGNIFICANT' if w2_p < 0.05 else ''}\n")
+
+    f.write("\n── Scaling Ablation (Fixed Split, 4 combinations) ──\n")
+    for combo_name in [c[0] for c in ablation_configs]:
+        row_rf = ablation_df[(ablation_df["combo"] == combo_name) & (ablation_df["model"] == "RF")].iloc[0]
+        row_mlp = ablation_df[(ablation_df["combo"] == combo_name) & (ablation_df["model"] == "MLP")].iloc[0]
+        f.write(f"\n{combo_name}:\n")
+        f.write(
+            f"  RF:  RMSE={row_rf['rmse']:.4f}, MAE={row_rf['mae']:.4f}, R²={row_rf['r2']:.4f}, "
+            f"Train={row_rf['train_sec']:.3f}s, Infer={row_rf['infer_ms_per_sample']:.3f}ms/sample\n"
+        )
+        f.write(
+            f"  MLP: RMSE={row_mlp['rmse']:.4f}, MAE={row_mlp['mae']:.4f}, R²={row_mlp['r2']:.4f}, "
+            f"Train={row_mlp['train_sec']:.3f}s, Infer={row_mlp['infer_ms_per_sample']:.3f}ms/sample\n"
+        )
 
 print(f"\n  Results summary saved to: {summary_path}")
 print("\n✅ All figures generated successfully!")

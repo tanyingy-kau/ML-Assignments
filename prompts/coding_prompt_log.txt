@@ -1,0 +1,25 @@
+Prompt Log - Coding and Analysis Support
+Date: 2026-05-10
+
+Prompt A (analysis scope)
+- Build an end-to-end reproducible script for syngas ethanol regression with LR, RF, MLP.
+- Generate train/test visualizations and statistical tests.
+
+Prompt B (visualization requirements)
+- Add train vs test performance bars, model-wise actual vs predicted scatter plots,
+  feature importance, MLP loss curve, and robustness plots.
+
+Prompt C (ablation requirements)
+- Add four scaling ablation combinations:
+  1) MLP scaled, RF unscaled
+  2) MLP scaled, RF scaled
+  3) MLP unscaled, RF unscaled
+  4) MLP unscaled, RF scaled
+- Export a table and figure summarizing RMSE differences.
+- Measure and report wall-clock training and inference runtime.
+
+Prompt D (compliance packaging)
+- Add requirements.txt, update README to match real files, and add provenance/prompt records.
+
+Note
+- This file records specification-level prompts used to structure implementation tasks.

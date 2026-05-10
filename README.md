@@ -14,7 +14,7 @@ This project applies machine learning techniques to predict ethanol production i
 |-------|---------|-----------|------------------------|
 | Linear Regression (baseline) | 0.6340 | 12.18 mM | 14.40 ± 1.81 mM |
 | **Random Forest (best)** | **0.9529** | **4.37 mM** | **9.48 ± 1.83 mM** |
-| MLP Neural Network | 0.9141 | 5.90 mM | 9.73 ± 2.64 mM |
+| MLP Neural Network | 0.9245 | 5.53 mM | 9.73 ± 2.64 mM |
 
 - **Statistical Significance:** Paired t-test (p = 2.79×10⁻⁶), Wilcoxon (p = 3.02×10⁻⁶)
 
@@ -34,15 +34,22 @@ ML-Assignments/
 │   ├── fig9_error_comparison.png         # Absolute error boxplot + LR vs RF scatter
 │   ├── fig10_robustness_boxplot.png      # RMSE distribution over 30 seeds
 │   └── fig11_robustness_line.png         # RMSE per seed (line plot, all 3 models)
+│   ├── fig12_scaling_ablation_rmse.png   # 4-combo scaling ablation (RF vs MLP RMSE)
+│   └── fig13_runtime_ablation.png        # Wall-clock runtime (train + inference)
 ├── report/
 │   ├── main.tex                          # LaTeX source (IEEEtran double-column)
 │   ├── references.bib                    # BibTeX bibliography
 │   └── syngas fermentation report-Ying Tan.pdf  # Final 7-page IEEE report
 ├── scripts/
-│   ├── syngas_analysis.py               # MAIN SCRIPT: full pipeline + 11 figures
+│   ├── syngas_analysis.py               # MAIN SCRIPT: full pipeline + 13 figures
+│   ├── scaling_ablation_results.csv     # 4-combo scaling ablation results table
 │   └── stats_test.py                    # Legacy: metrics + statistical tests only
 ├── slides/
 │   └── term_project_presentation_SYNGAS--group 6 Ying.pptx  # 13-slide presentation
+├── sources/
+│   └── code_provenance.txt              # Code provenance and AI/non-AI attribution
+├── prompts/
+│   └── coding_prompt_log.txt            # Source prompts/specification log
 ├── ML_regular.ipynb                      # Baseline notebook (PS8 interim report)
 ├── requirements.txt                      # Python package dependencies
 ├── results_summary.txt                   # Numerical results: metrics + statistical tests
@@ -87,7 +94,28 @@ python scripts/syngas_analysis.py
 - `figures/fig9_error_comparison.png` — Absolute error boxplot
 - `figures/fig10_robustness_boxplot.png` — 30-fold RMSE boxplot
 - `figures/fig11_robustness_line.png` — 30-fold RMSE line plot
+- `figures/fig12_scaling_ablation_rmse.png` — 4-combo scaling ablation RMSE chart
+- `figures/fig13_runtime_ablation.png` — wall-clock train/inference runtime chart
 - `results_summary.txt` — All numerical metrics and statistical test results
+- `scripts/scaling_ablation_results.csv` — detailed ablation table for all 4 combinations
+
+### Scaling Ablation Combinations
+
+The script explicitly evaluates these four combinations on the same fixed split:
+1. MLP scaled + RF unscaled
+2. MLP scaled + RF scaled
+3. MLP unscaled + RF unscaled
+4. MLP unscaled + RF scaled
+
+The results are saved in `scripts/scaling_ablation_results.csv` and visualized in `figures/fig12_scaling_ablation_rmse.png`.
+
+### Runtime Reporting
+
+Wall-clock runtime is measured for each model and ablation combination:
+- Training time (seconds)
+- Inference latency (milliseconds per sample)
+
+Runtime plots are saved in `figures/fig13_runtime_ablation.png`.
 
 ### Compile Report (LaTeX)
 ```bash
@@ -128,6 +156,10 @@ pdflatex -interaction=nonstopmode main.tex
 ## GenAI Disclosure
 
 Per Canvas policy, a GenAI Audit Appendix is included in the final report documenting AI assistance scope, original student inputs, and reproducibility verification.
+
+Additional repository artifacts for transparency:
+- `sources/code_provenance.txt`
+- `prompts/coding_prompt_log.txt`
 
 ## Authors
 
