@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.9)  9 MAY 2026 15:51
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.9)  10 MAY 2026 18:24
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -402,39 +402,60 @@ f-dist/fonts/enc/dvips/base/8r.enc}
 
 
 ]
-LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 1
-51.
+Underfull \hbox (badness 1609) in paragraph at lines 122--123
+[]\OT1/ptm/m/n/10 All im-ple-men-ta-tions use open-source Python li-braries:
+ []
+
+[2]
+LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 2
+01.
  (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 )
-Underfull \hbox (badness 1881) in paragraph at lines 151--152
+Underfull \hbox (badness 1881) in paragraph at lines 201--202
  \OT1/ptm/m/it/10 1) Quan-ti-ta-tive Anal-y-sis: [][][] \OT1/ptm/m/n/10 Lin-ear
  Re-gres-sion (base-line)
  []
 
-[2] [3]
-Underfull \hbox (badness 1490) in paragraph at lines 247--248
+[3] [4]
+Underfull \hbox (badness 1490) in paragraph at lines 333--334
 \OT1/ptm/m/n/10 sample train-ing set. This in-tro-duces di-ver-sity; trees
  []
 
-[4]
-Underfull \hbox (badness 10000) in paragraph at lines 307--308
+[5]
+Underfull \hbox (badness 10000) in paragraph at lines 393--394
 []\OT1/ptm/b/n/10 Temperature vari-a-tions: \OT1/ptm/m/n/10 If train-ing data s
 pan
  []
 
-[5]
-LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 3
-92.
+[6]
+LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 4
+75.
  (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ot1pcr.fd
 File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 )
-Underfull \hbox (badness 2042) in paragraph at lines 395--396
+Underfull \hbox (badness 10000) in paragraph at lines 474--476
+[]\OT1/ptm/m/n/10 Repository ar-ti-facts doc-u-ment-ing code ori-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 474--476
+\OT1/ptm/m/n/10 gin and prompt spec-i-fi-ca-tions are in-cluded
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 474--476
+\OT1/ptm/m/n/10 in: \OT1/pcr/m/n/10 sources/code_provenance.txt \OT1/ptm/m/n/10
+ and
+ []
+
+[7]
+Underfull \hbox (badness 2042) in paragraph at lines 485--486
 []\OT1/ptm/m/n/10 Methodology choice jus-ti-fi-ca-tions based on do-main
  []
 
-[6]
-Underfull \hbox (badness 1968) in paragraph at lines 415--416
+
+Underfull \hbox (badness 1968) in paragraph at lines 505--506
  []\OT1/ptm/m/it/10 Summary: [] \OT1/ptm/m/n/10 The con-tri-bu-tion is pre-dom-
 i-nantly student-
  []
@@ -451,7 +472,7 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[7
+[8
 
 ] (./main.aux)
  ***********
@@ -459,16 +480,16 @@ LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 8F62EC9FC564D81F1AA8FC05D5B1277B;9389.
+(rerunfilecheck)             Checksum: C97C99231419810FBD7D6C87BDD6BC1C;11286.
  ) 
 Here is how much of TeX's memory you used:
- 9855 strings out of 476182
- 153194 string characters out of 5795596
+ 9878 strings out of 476182
+ 153474 string characters out of 5795596
  1948975 words of memory out of 5000000
- 31662 multiletter control sequences out of 15000+600000
+ 31670 multiletter control sequences out of 15000+600000
  602280 words of font info for 124 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 75i,9n,79p,1301b,527s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,9n,79p,1301b,525s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></us
 r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/shar
 e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texl
@@ -487,10 +508,10 @@ ve/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/share/texlive/texmf-dist
 /fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/ur
 w/times/utmbi8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a
 .pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on main.pdf (7 pages, 245503 bytes).
+Output written on main.pdf (8 pages, 255494 bytes).
 PDF statistics:
- 377 PDF objects out of 1000 (max. 8388607)
- 324 compressed objects within 4 object streams
- 81 named destinations out of 1000 (max. 500000)
- 361 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 419 PDF objects out of 1000 (max. 8388607)
+ 365 compressed objects within 4 object streams
+ 96 named destinations out of 1000 (max. 500000)
+ 417 words of extra memory for PDF output out of 10000 (max. 10000000)
 

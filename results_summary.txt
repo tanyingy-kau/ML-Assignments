@@ -33,17 +33,17 @@ MLP:
 ── Scaling Ablation (Fixed Split, 4 combinations) ──
 
 MLP scaled + RF unscaled:
-  RF:  RMSE=4.3706, MAE=3.0850, R²=0.9529, Train=0.099s, Infer=0.711ms/sample
-  MLP: RMSE=5.5337, MAE=4.0084, R²=0.9245, Train=0.289s, Infer=0.004ms/sample
+  RF:  RMSE=4.3706, MAE=3.0850, R²=0.9529, Train=0.091s, Infer=0.404ms/sample
+  MLP: RMSE=5.5337, MAE=4.0084, R²=0.9245, Train=0.284s, Infer=0.004ms/sample
 
 MLP scaled + RF scaled:
-  RF:  RMSE=4.7972, MAE=3.3365, R²=0.9432, Train=0.093s, Infer=0.711ms/sample
-  MLP: RMSE=5.5337, MAE=4.0084, R²=0.9245, Train=0.279s, Infer=0.004ms/sample
+  RF:  RMSE=4.7972, MAE=3.3365, R²=0.9432, Train=0.085s, Infer=0.422ms/sample
+  MLP: RMSE=5.5337, MAE=4.0084, R²=0.9245, Train=0.284s, Infer=0.004ms/sample
 
 MLP unscaled + RF unscaled:
-  RF:  RMSE=4.3706, MAE=3.0850, R²=0.9529, Train=0.092s, Infer=0.717ms/sample
+  RF:  RMSE=4.3706, MAE=3.0850, R²=0.9529, Train=0.089s, Infer=0.697ms/sample
   MLP: RMSE=5.3398, MAE=4.0529, R²=0.9297, Train=0.280s, Infer=0.004ms/sample
 
 MLP unscaled + RF scaled:
-  RF:  RMSE=4.7972, MAE=3.3365, R²=0.9432, Train=0.099s, Infer=0.711ms/sample
-  MLP: RMSE=5.3398, MAE=4.0529, R²=0.9297, Train=0.289s, Infer=0.004ms/sample
+  RF:  RMSE=4.7972, MAE=3.3365, R²=0.9432, Train=0.089s, Infer=0.719ms/sample
+  MLP: RMSE=5.3398, MAE=4.0529, R²=0.9297, Train=0.278s, Infer=0.004ms/sample
