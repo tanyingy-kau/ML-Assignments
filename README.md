@@ -132,14 +132,14 @@ pdflatex -interaction=nonstopmode main.tex
 ## GenAI Disclosure (Appendix)
 
 Per Canvas policy, this project includes a GenAI Audit Appendix in the main report documenting:
-- **Student Contribution:** ~85-90% (problem framing, implementation, experiments, statistical analysis, conclusions)
+- **Student Contribution:** ~85-90% (problem framing, implementation, experiments, statistical analysis, conclusions) Data sources are from published paper.
 - **GenAI Assistance:** ~10-15% (writing polish, formatting, editorial suggestions only)
 - **Reproducibility:** All code, results, and methodology are independently verifiable
 
 ## Authors
 
 - **Student:** Ying Tan
-- **Instructor:** Dr. Bud Mishra (@banazir)
+- **Instructor:** Dr. Hsu
 - **Course:** Machine Learning (CIS 732/830), Kansas State University, Spring 2026
 
 ## License
