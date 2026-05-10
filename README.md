@@ -10,27 +10,42 @@ This project applies machine learning techniques to predict ethanol production i
 
 ## Key Results
 
-- **Best Model:** Random Forest (R² = 0.9529, RMSE = 4.37 mM)
-- **Baseline:** Linear Regression (R² = 0.6408, RMSE = 12.65 mM)
-- **Performance Improvement:** 65% reduction in RMSE
+| Model | Test R² | Test RMSE | 30-fold RMSE (mean±std) |
+|-------|---------|-----------|------------------------|
+| Linear Regression (baseline) | 0.6340 | 12.18 mM | 14.40 ± 1.81 mM |
+| **Random Forest (best)** | **0.9529** | **4.37 mM** | **9.48 ± 1.83 mM** |
+| MLP Neural Network | 0.9141 | 5.90 mM | 9.73 ± 2.64 mM |
+
 - **Statistical Significance:** Paired t-test (p = 2.79×10⁻⁶), Wilcoxon (p = 3.02×10⁻⁶)
-- **Robustness:** Validated across 30 random seeds (RF: mean RMSE = 5.51±1.08 mM)
 
 ## Directory Structure
 
 ```
-term_project_deliverables/
+ML-Assignments/
+├── figures/
+│   ├── fig1_data_distributions.png       # Feature + target histograms
+│   ├── fig2_feature_vs_target.png        # Feature vs ethanol scatter plots
+│   ├── fig3_mlp_training_loss.png        # MLP training loss curve (500 epochs)
+│   ├── fig4_train_vs_test_performance.png # Bar chart: Train vs Test R²/RMSE all models
+│   ├── fig5_scatter_LR_train_test.png    # LR actual vs predicted (train + test)
+│   ├── fig6_scatter_RF_train_test.png    # RF actual vs predicted (train + test)
+│   ├── fig7_scatter_MLP_train_test.png   # MLP actual vs predicted (train + test)
+│   ├── fig8_RF_feature_importance.png    # Random Forest feature importances
+│   ├── fig9_error_comparison.png         # Absolute error boxplot + LR vs RF scatter
+│   ├── fig10_robustness_boxplot.png      # RMSE distribution over 30 seeds
+│   └── fig11_robustness_line.png         # RMSE per seed (line plot, all 3 models)
 ├── report/
-│   ├── main.tex                          # Main LaTeX source document
-│   ├── references.bib                    # BibTeX bibliography file
-│   └── syngas fermentation report-Ying Tan.pdf  # Final 7-page IEEE-formatted report
-├── slides/
-│   ├── term_project_presentation_SYNGAS_FINAL.pptx  # Final 10-slide presentation deck
-│   ├── generate_syngas_ppt_final.py      # Script to generate presentation with embedded charts
-│   └── speaker_script_SYNGAS.txt         # Presentation speaker notes
+│   ├── main.tex                          # LaTeX source (IEEEtran double-column)
+│   ├── references.bib                    # BibTeX bibliography
+│   └── syngas fermentation report-Ying Tan.pdf  # Final 7-page IEEE report
 ├── scripts/
-│   ├── stats_test.py                     # Model training, evaluation, and statistical testing
-│   └── stat_tests_output.txt             # Logged output from statistical tests
+│   ├── syngas_analysis.py               # MAIN SCRIPT: full pipeline + 11 figures
+│   └── stats_test.py                    # Legacy: metrics + statistical tests only
+├── slides/
+│   └── term_project_presentation_SYNGAS--group 6 Ying.pptx  # 13-slide presentation
+├── ML_regular.ipynb                      # Baseline notebook (PS8 interim report)
+├── requirements.txt                      # Python package dependencies
+├── results_summary.txt                   # Numerical results: metrics + statistical tests
 └── README.md                             # This file
 ```
 
@@ -39,48 +54,42 @@ term_project_deliverables/
 ### Requirements
 
 - Python 3.8+
-- Required packages (see `requirements.txt` or install via):
+- Install all dependencies:
   ```bash
-  pip install pandas numpy scikit-learn scipy matplotlib seaborn
+  pip install -r requirements.txt
   ```
 
 ### Data
 
-The dataset is sourced from the [SyngasMachineLearning GitHub repository](https://github.com/thahnen/SyngasMachineLearning):
-- **Size:** 176 samples
-- **Features:** 7 (Temperature, Pressure, Feed Composition, etc.)
-- **Target:** Ethanol production rate (mM)
+The dataset is loaded automatically from the public [SyngasMachineLearning GitHub repository](https://github.com/garrettroell/SyngasMachineLearning) (raw CSV via HTTP). No manual download is required.
 
-**Note:** If the dataset is not in the `data/` directory, download it from the link above and place it in:
-```
-data/Syngas_Fermentation_ML_Data.csv
-```
+- **Size:** 176 samples
+- **Features (7):** time, N₂, CO, CO₂, H₂, flow rate, composition setting
+- **Target:** Ethanol concentration (mM), range 0–109
 
 ## Running the Code
 
-### 1. Train Models and Generate Statistics
+### Full Analysis (recommended)
 ```bash
-cd scripts/
-python stats_test.py
+cd /path/to/ML-Assignments
+python scripts/syngas_analysis.py
 ```
 
-**Output:**
-- Model performance metrics (RMSE, MAE, R²)
-- Paired t-test results (H₀: RF = LR)
-- Wilcoxon signed-rank test results
-- Robustness analysis across 30 seeds (0-29)
-- PNG charts saved to `slides/` directory
+**Output (all saved automatically):**
+- `figures/fig1_data_distributions.png` — Feature + target histograms
+- `figures/fig2_feature_vs_target.png` — Feature vs ethanol scatter plots
+- `figures/fig3_mlp_training_loss.png` — MLP loss curve (500 epochs)
+- `figures/fig4_train_vs_test_performance.png` — Train/test R² and RMSE bar chart
+- `figures/fig5_scatter_LR_train_test.png` — LR actual vs predicted (train + test)
+- `figures/fig6_scatter_RF_train_test.png` — RF actual vs predicted (train + test)
+- `figures/fig7_scatter_MLP_train_test.png` — MLP actual vs predicted (train + test)
+- `figures/fig8_RF_feature_importance.png` — Feature importance bar chart
+- `figures/fig9_error_comparison.png` — Absolute error boxplot
+- `figures/fig10_robustness_boxplot.png` — 30-fold RMSE boxplot
+- `figures/fig11_robustness_line.png` — 30-fold RMSE line plot
+- `results_summary.txt` — All numerical metrics and statistical test results
 
-### 2. Generate Presentation
-```bash
-cd slides/
-python generate_syngas_ppt_final.py
-```
-
-**Output:**
-- `term_project_presentation_SYNGAS_FINAL.pptx` with embedded charts
-
-### 3. Compile Report (LaTeX)
+### Compile Report (LaTeX)
 ```bash
 cd report/
 pdflatex -interaction=nonstopmode main.tex
@@ -89,72 +98,45 @@ pdflatex -interaction=nonstopmode main.tex
 pdflatex -interaction=nonstopmode main.tex
 ```
 
-**Output:**
-- `syngas fermentation report-Ying Tan.pdf` (7 pages, IEEE double-column format)
+**Output:** `syngas fermentation report-Ying Tan.pdf` (7 pages, IEEE double-column format)
 
-## Evaluation & Methodology
+## Methodology
 
-### Hypothesis Testing
-- **H₀:** Random Forest performance = Linear Regression performance
-- **H₁:** Random Forest performance ≠ Linear Regression performance
-- **Result:** Reject H₀ (strong statistical evidence of RF superiority)
+### Models
+- **Linear Regression** — baseline, interpretable
+- **Random Forest** — `n_estimators=200`, `random_state=42`; captures non-linearity
+- **MLP Regressor** — `hidden_layer_sizes=(64,32)`, `max_iter=2000`; input features scaled with `StandardScaler`
 
-### Cross-Validation
-- **Method:** 30-fold stratified cross-validation
-- **Random Seeds:** 0-29 for robustness validation
-- **Metric:** Root Mean Squared Error (RMSE), Mean Absolute Error (MAE), R² Score
+### Evaluation Protocol
+- **Fixed split:** 80/20 train-test (`random_state=42`), reproducible
+- **30-fold robustness:** seeds 0–29, each with independent 80/20 split
 
-### Key Findings
-1. Random Forest significantly outperforms Linear Regression (p < 0.001)
-2. MLP performs well (R² = 0.9245) but slightly underperforms RF
-3. Model robustness confirmed across diverse random seeds
-4. Linear Regression shows high variance (RMSE = 14.07±2.04 mM across 30 seeds)
-
-## Files Manifest
-
-| File | Purpose |
-|------|---------|
-| `main.tex` | IEEE-formatted report source (IEEEtran class, double-column) |
-| `stats_test.py` | Complete ML pipeline: data loading, model training, evaluation, hypothesis testing |
-| `generate_syngas_ppt_final.py` | PowerPoint generation with real data charts |
-| `speaker_script_SYNGAS.txt` | Presentation delivery notes (~12.5 min, 10 slides) |
-| `syngas fermentation report-Ying Tan.pdf` | Final compiled report (7 pages, 245,503 bytes) |
-| `term_project_presentation_SYNGAS_FINAL.pptx` | Final presentation deck (10 slides, 120 KB) |
+### Statistical Hypothesis Testing
+- **H₀:** LR and RF have equivalent prediction error on the test distribution
+- **H₁:** RF has significantly lower error than LR
+- **Tests:** Paired t-test + Wilcoxon signed-rank (α = 0.05)
+- **Result:** Reject H₀ — both tests p ≪ 0.05 (p = 2.79×10⁻⁶)
 
 ## Compliance
 
 - **Report Format:** IEEE/ACM double-column proceedings format ✓
 - **Report Length:** 6-8 pages (7 pages) ✓
-- **Presentation Duration:** ≤15 minutes (12.5 minutes) ✓
-- **Presentation Slides:** 10-15 (10 slides) ✓
-- **All Canvas Guidelines:** Met ✓
+- **Report Sections:** Abstract, Introduction, Background/Related Work, Methodology, Experiments & Results (with statistical hypotheses), Conclusion ✓
+- **Codebase:** requirements.txt, reproducible main script, comprehensive README ✓
+- **Presentation Q&A:** Three standard reflection questions answered (Slides 11–13) ✓
 
-## GenAI Disclosure (Appendix)
+## GenAI Disclosure
 
-Per Canvas policy, this project includes a GenAI Audit Appendix in the main report documenting:
-- **Student Contribution:** ~85-90% (problem framing, implementation, experiments, statistical analysis, conclusions) Data sources are from published paper.
-- **GenAI Assistance:** ~10-15% (writing polish, formatting, editorial suggestions only)
-- **Reproducibility:** All code, results, and methodology are independently verifiable
+Per Canvas policy, a GenAI Audit Appendix is included in the final report documenting AI assistance scope, original student inputs, and reproducibility verification.
 
 ## Authors
 
 - **Student:** Ying Tan
-- **Instructor:** Dr. Hsu
 - **Course:** Machine Learning (CIS 732/830), Kansas State University, Spring 2026
 
 ## License
 
-This work is submitted as course work for CIS 732/830 at Kansas State University and is subject to institutional academic integrity policies.
-
-## References
-
-Complete references are provided in `references.bib` and compiled in the main report. Key sources include:
-1. Scikit-learn documentation
-2. SyngasMachineLearning GitHub repository
-3. Statistical testing literature (paired t-test, Wilcoxon signed-rank)
+Submitted as course work for CIS 732/830 at Kansas State University, subject to institutional academic integrity policies.
 
 ---
-
-**Last Updated:** May 9, 2026  
-**Report Compilation Timestamp:** May 9, 2026 | 15:51 UTC  
-**Final Status:** Ready for submission
+**Last Updated:** May 10, 2026
