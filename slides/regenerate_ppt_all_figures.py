@@ -5,12 +5,21 @@ import re
 
 from pptx import Presentation
 from pptx.util import Inches, Pt
+from pptx.dml.color import RGBColor
+from pptx.enum.shapes import MSO_SHAPE
+from pptx.enum.text import PP_ALIGN
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 FIG_DIR = REPO_ROOT / "figures"
 OUT_PPT = REPO_ROOT / "slides" / "term_project_presentation_SYNGAS--group 6 Ying.pptx"
 RESULTS_PATH = REPO_ROOT / "results_summary.txt"
+
+# K-State inspired palette
+KSTATE_PURPLE = RGBColor(81, 40, 136)
+KSTATE_LAVENDER = RGBColor(232, 226, 240)
+TEXT_DARK = RGBColor(37, 31, 45)
+WHITE = RGBColor(255, 255, 255)
 
 FIG_DATA = [
     (
@@ -151,15 +160,50 @@ def parse_summary(path: Path) -> dict:
 
 
 def add_title(prs: Presentation):
-    s = prs.slides.add_slide(prs.slide_layouts[0])
-    s.shapes.title.text = "Ethanol Concentration Prediction in Syngas Fermentation"
-    s.placeholders[1].text = "CIS 732/830 Final Project\nYing Tan\nMerged deck (no duplicate sections)"
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    add_theme_frame(s, "Title")
+
+    hero = s.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.6), Inches(1.25), Inches(12.1), Inches(4.9))
+    hero.fill.solid()
+    hero.fill.fore_color.rgb = KSTATE_PURPLE
+    hero.line.fill.background()
+
+    tbox = s.shapes.add_textbox(Inches(1.0), Inches(1.7), Inches(11.3), Inches(2.1))
+    tf = tbox.text_frame
+    tf.clear()
+    p0 = tf.paragraphs[0]
+    p0.text = "Ethanol Concentration Prediction\nin Syngas Fermentation"
+    p0.font.size = Pt(40)
+    p0.font.bold = True
+    p0.font.color.rgb = WHITE
+    p0.alignment = PP_ALIGN.CENTER
+
+    p1 = tf.add_paragraph()
+    p1.text = "CIS 732/830 Final Project"
+    p1.font.size = Pt(22)
+    p1.font.color.rgb = KSTATE_LAVENDER
+    p1.alignment = PP_ALIGN.CENTER
+
+    p2 = tf.add_paragraph()
+    p2.text = "Ying Tan | K-State Theme Edition"
+    p2.font.size = Pt(18)
+    p2.font.color.rgb = KSTATE_LAVENDER
+    p2.alignment = PP_ALIGN.CENTER
 
 
 def add_overview(prs: Presentation, sm: dict):
-    s = prs.slides.add_slide(prs.slide_layouts[1])
-    s.shapes.title.text = "Overview"
-    tf = s.shapes.placeholders[1].text_frame
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    add_theme_frame(s, "Overview")
+
+    tf = add_title_box(s, "Executive Summary")
+
+    body_box = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(1.45), Inches(11.8), Inches(4.9))
+    body_box.fill.solid()
+    body_box.fill.fore_color.rgb = RGBColor(246, 244, 250)
+    body_box.line.color.rgb = KSTATE_LAVENDER
+
+    body_tf = s.shapes.add_textbox(Inches(1.15), Inches(1.75), Inches(11.1), Inches(4.2)).text_frame
+    body_tf.clear()
     tf.clear()
 
     rf = sm.get("rf", ("?", "?", "?"))
@@ -177,35 +221,61 @@ def add_overview(prs: Presentation, sm: dict):
         "Slides 3-15 cover Figure 1 to Figure 13 with explanations.",
     ]
     for i, line in enumerate(lines):
-        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        p = body_tf.paragraphs[0] if i == 0 else body_tf.add_paragraph()
         p.text = line
-        p.font.size = Pt(18 if i == 0 else 16)
+        p.font.size = Pt(21 if i == 0 else 18)
+        p.font.color.rgb = TEXT_DARK
+        if i > 0:
+            p.level = 0
 
 
 def add_figure_slide(prs: Presentation, fig: str, title: str, bullets: list[str]):
     s = prs.slides.add_slide(prs.slide_layouts[6])
+    add_theme_frame(s, "Figure")
 
-    tbox = s.shapes.add_textbox(Inches(0.3), Inches(0.1), Inches(12.8), Inches(0.55))
-    ttf = tbox.text_frame
-    ttf.text = title
-    ttf.paragraphs[0].font.size = Pt(27)
-    ttf.paragraphs[0].font.bold = True
+    add_title_box(s, title)
 
-    s.shapes.add_picture(str(FIG_DIR / fig), Inches(0.3), Inches(0.85), width=Inches(8.6), height=Inches(5.7))
+    # Left panel for image
+    img_card = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.45), Inches(1.15), Inches(8.85), Inches(5.35))
+    img_card.fill.solid()
+    img_card.fill.fore_color.rgb = WHITE
+    img_card.line.color.rgb = KSTATE_LAVENDER
 
-    nbox = s.shapes.add_textbox(Inches(9.0), Inches(0.85), Inches(3.8), Inches(5.8))
+    s.shapes.add_picture(str(FIG_DIR / fig), Inches(0.68), Inches(1.38), width=Inches(8.4), height=Inches(4.9))
+
+    # Right panel for explanation text
+    note_card = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(9.45), Inches(1.15), Inches(3.35), Inches(5.35))
+    note_card.fill.solid()
+    note_card.fill.fore_color.rgb = RGBColor(247, 244, 252)
+    note_card.line.color.rgb = KSTATE_LAVENDER
+
+    nbox = s.shapes.add_textbox(Inches(9.72), Inches(1.35), Inches(2.9), Inches(4.95))
     ntf = nbox.text_frame
+    ntf.word_wrap = True
     ntf.clear()
     for i, b in enumerate(bullets):
         p = ntf.paragraphs[0] if i == 0 else ntf.add_paragraph()
-        p.text = b
-        p.font.size = Pt(15)
+        p.text = f"- {b}"
+        p.font.size = Pt(15 if i == 0 else 14)
+        p.font.color.rgb = TEXT_DARK
+
+    cap = s.shapes.add_textbox(Inches(0.72), Inches(6.15), Inches(8.1), Inches(0.28)).text_frame
+    cap.text = "All values and figures are generated from scripts/syngas_analysis.py"
+    cap.paragraphs[0].font.size = Pt(10)
+    cap.paragraphs[0].font.color.rgb = RGBColor(98, 93, 108)
 
 
 def add_conclusion(prs: Presentation, sm: dict):
-    s = prs.slides.add_slide(prs.slide_layouts[1])
-    s.shapes.title.text = "Conclusion"
-    tf = s.shapes.placeholders[1].text_frame
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    add_theme_frame(s, "Conclusion")
+    tf = add_title_box(s, "Conclusion and Recommendation")
+
+    body_box = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(1.45), Inches(11.8), Inches(4.9))
+    body_box.fill.solid()
+    body_box.fill.fore_color.rgb = RGBColor(246, 244, 250)
+    body_box.line.color.rgb = KSTATE_LAVENDER
+
+    tf = s.shapes.add_textbox(Inches(1.15), Inches(1.75), Inches(11.1), Inches(4.2)).text_frame
     tf.clear()
 
     rf = sm.get("rf", ("?", "?", "?"))
@@ -222,7 +292,40 @@ def add_conclusion(prs: Presentation, sm: dict):
     for i, line in enumerate(lines):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
         p.text = line
-        p.font.size = Pt(18 if i == 0 else 16)
+        p.font.size = Pt(21 if i == 0 else 18)
+        p.font.color.rgb = TEXT_DARK
+
+
+def add_theme_frame(slide, tag: str):
+    bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.33), Inches(7.5))
+    bg.fill.solid()
+    bg.fill.fore_color.rgb = RGBColor(252, 251, 255)
+    bg.line.fill.background()
+
+    top = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.33), Inches(0.45))
+    top.fill.solid()
+    top.fill.fore_color.rgb = KSTATE_PURPLE
+    top.line.fill.background()
+
+    footer = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(7.2), Inches(13.33), Inches(0.3))
+    footer.fill.solid()
+    footer.fill.fore_color.rgb = RGBColor(236, 230, 245)
+    footer.line.fill.background()
+
+    footer_tf = slide.shapes.add_textbox(Inches(0.35), Inches(7.22), Inches(12.6), Inches(0.22)).text_frame
+    footer_tf.text = f"Kansas State University | CIS 732/830 | {tag}"
+    footer_tf.paragraphs[0].font.size = Pt(10)
+    footer_tf.paragraphs[0].font.color.rgb = RGBColor(84, 76, 102)
+
+
+def add_title_box(slide, text: str):
+    tbox = slide.shapes.add_textbox(Inches(0.55), Inches(0.52), Inches(12.2), Inches(0.55))
+    tf = tbox.text_frame
+    tf.text = text
+    tf.paragraphs[0].font.size = Pt(28)
+    tf.paragraphs[0].font.bold = True
+    tf.paragraphs[0].font.color.rgb = KSTATE_PURPLE
+    return tf
 
 
 def main():
