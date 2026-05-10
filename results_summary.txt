@@ -1,0 +1,31 @@
+============================================================
+SYNGAS FERMENTATION — RESULTS SUMMARY
+CIS 732 Term Project — Ying Tan
+============================================================
+
+── Fixed Split (seed=42, 80/20) ──
+
+Linear Regression:
+  Train: RMSE=13.8218, MAE=10.6233, R²=0.5582
+  Test:  RMSE=12.1832,  MAE=9.2922,  R²=0.6340
+
+Random Forest:
+  Train: RMSE=5.0754, MAE=2.9487, R²=0.9404
+  Test:  RMSE=4.3706,  MAE=3.0850,  R²=0.9529
+
+MLP:
+  Train: RMSE=8.2746, MAE=5.8137, R²=0.8416
+  Test:  RMSE=5.9014,  MAE=5.0166,  R²=0.9141
+
+── Statistical Tests (sample-level, LR vs RF) ──
+  Paired t-test: t=5.3489, p=2.79e-06 ***SIGNIFICANT
+  Wilcoxon:      W=621.0000, p=3.02e-06 ***SIGNIFICANT
+
+── 30-Fold Robustness (RMSE mean ± std) ──
+  LR:  14.3956 ± 1.7770 mM
+  RF:  9.4793 ± 1.7977 mM
+  MLP: 9.7274 ± 2.5986 mM
+
+── Seed-level Tests (LR RMSE > RF RMSE) ──
+  Paired t-test: t=15.0015, p=1.68e-15 ***SIGNIFICANT
+  Wilcoxon:      W=465.0000, p=9.31e-10 ***SIGNIFICANT
